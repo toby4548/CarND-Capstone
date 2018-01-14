@@ -13,6 +13,7 @@ import yaml
 import math
 
 STATE_COUNT_THRESHOLD = 3
+USE_MODEL = False
 
 class TLDetector(object):
     def __init__(self):
@@ -173,18 +174,25 @@ class TLDetector(object):
                 closest_idx_diff = idx_diff
                 closest_stop_line_pose = stop_line_pose
                 closest_stop_line_idx = stop_line_idx
-        
-        return closest_stop_line_idx,TrafficLight.RED
+
+            if not USE_MODEL:
+                stop_line_state = self.lights[i].state
+            
+            else: 
+                #Change this part if use model for prodiction
+                #TODO find the closest visible traffic light (if one exists)
+                '''
+                if light:
+                    state = self.get_light_state(light)
+                    return light_wp, state
+                self.waypoints = None
+                return -1, TrafficLight.UNKNOWN
+                '''
+                pass
+
+        return closest_stop_line_idx,stop_line_state
 
 
-        #TODO find the closest visible traffic light (if one exists)
-        '''
-        if light:
-            state = self.get_light_state(light)
-            return light_wp, state
-        self.waypoints = None
-        return -1, TrafficLight.UNKNOWN
-        '''
 
 if __name__ == '__main__':
     try:
