@@ -157,41 +157,41 @@ class TLDetector(object):
         if(self.pose):
             car_position_idx = self.get_closest_waypoint(self.pose.pose)
 
-        # Get closest stop line
-        closest_idx_diff = 10e10
-        closest_stop_line_pose = None
-        closest_stop_line_idx = None
-        for i in range(len(stop_line_positions)):
-            stop_line_pose = PoseStamped()
-            stop_line_pose.pose.position.x = stop_line_positions[i][0]
-            stop_line_pose.pose.position.y = stop_line_positions[i][1]
-            stop_line_idx = self.get_closest_waypoint(stop_line_pose.pose)
-            idx_diff = stop_line_idx - car_position_idx
-            if idx_diff < 0:
-                idx_diff += self.waypoints_num
+            # Get closest stop line
+            closest_idx_diff = 10e10
+            closest_stop_line_pose = None
+            closest_stop_line_idx = None
+            for i in range(len(stop_line_positions)):
+                stop_line_pose = PoseStamped()
+                stop_line_pose.pose.position.x = stop_line_positions[i][0]
+                stop_line_pose.pose.position.y = stop_line_positions[i][1]
+                stop_line_idx = self.get_closest_waypoint(stop_line_pose.pose)
+                idx_diff = stop_line_idx - car_position_idx
+                if idx_diff < 0:
+                    idx_diff += self.waypoints_num
 
-            if idx_diff < closest_idx_diff:
-                closest_idx_diff = idx_diff
-                closest_stop_line_pose = stop_line_pose
-                closest_stop_line_idx = stop_line_idx
+                if idx_diff < closest_idx_diff:
+                    closest_idx_diff = idx_diff
+                    closest_stop_line_pose = stop_line_pose
+                    closest_stop_line_idx = stop_line_idx
 
-            if not USE_MODEL:
-                stop_line_state = self.lights[i].state
+                if not USE_MODEL:
+                    stop_line_state = self.lights[i].state
             
-            else: 
-                #Change this part if use model for prodiction
-                #TODO find the closest visible traffic light (if one exists)
-                '''
-                if light:
-                    state = self.get_light_state(light)
-                    return light_wp, state
-                self.waypoints = None
-                return -1, TrafficLight.UNKNOWN
-                '''
-                pass
+                else: 
+                    #Change this part if use model for prodiction
+                    #TODO find the closest visible traffic light (if one exists)
+                    '''
+                    if light:
+                        state = self.get_light_state(light)
+                        return light_wp, state
+                    self.waypoints = None
+                    return -1, TrafficLight.UNKNOWN
+                    '''
+                    pass
 
-        return closest_stop_line_idx,stop_line_state
-
+            return closest_stop_line_idx,stop_line_state
+        return -1, TrafficLight.UNKNOWN 
 
 
 if __name__ == '__main__':
