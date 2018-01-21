@@ -19,10 +19,12 @@ class TLClassifier(object):
 
 	if MODEL_TYPE == 1:
         	PATH_TO_MODEL = cwd+'/models/frozen_sim_inception/frozen_inference_graph.pb'
+		PATH_TO_LABELS = cwd+'/models/frozen_sim_inception/label_map.pbtxt'
 	elif MODEL_TYPE == 2:
 		PATH_TO_MODEL = cwd+'/models/frozen_sim_res/frozen_inference_graph.pb'
+		PATH_TO_LABELS = cwd+'/models/frozen_sim_res/label_map.pbtxt'
 
-        PATH_TO_LABELS = cwd+'/models/label_map.pbtxt'
+        
         NUM_CLASSES = 4
 
         #Load model into memory
@@ -98,12 +100,14 @@ class TLClassifier(object):
             elif scores[i] >= detection_thresh :
                 class_name = self.category_index[classes[i]]['name']
 
-                if class_name == 'Green':
+                if 'Green' in class_name :
                     self.tl_detection = TrafficLight.GREEN
-                elif class_name == 'Yellow':
+                elif 'Yellow' in class_name:
                     self.tl_detection = TrafficLight.YELLOW
-                elif class_name == 'Red':
+                elif 'Red' in class_name:
                     self.tl_detection = TrafficLight.RED
+		else:
+		    self.tl_detection = TrafficLight.UNKNOWN
         
         if np.all(scores < detection_thresh):
             self.tl_detection = TrafficLight.UNKNOWN
