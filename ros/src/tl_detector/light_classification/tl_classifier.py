@@ -9,7 +9,7 @@ from utils import label_map_util
 from utils import visualization_utils as vis_util
 from styx_msgs.msg import TrafficLight
 
-MODEL_TYPE = 1 # 1 for inception, 2 for resnet
+MODEL_TYPE = 2 # 1 for inception, 2 for resnet
 
 class TLClassifier(object):
     def __init__(self):
@@ -20,12 +20,11 @@ class TLClassifier(object):
 	if MODEL_TYPE == 1:
         	PATH_TO_MODEL = cwd+'/models/frozen_sim_inception/frozen_inference_graph.pb'
 		PATH_TO_LABELS = cwd+'/models/frozen_sim_inception/label_map.pbtxt'
+		NUM_CLASSES = 4
 	elif MODEL_TYPE == 2:
 		PATH_TO_MODEL = cwd+'/models/frozen_sim_res/frozen_inference_graph.pb'
 		PATH_TO_LABELS = cwd+'/models/frozen_sim_res/label_map.pbtxt'
-
-        
-        NUM_CLASSES = 4
+		NUM_CLASSES = 14
 
         #Load model into memory
         self.detection_graph = tf.Graph()
