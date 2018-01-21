@@ -13,7 +13,8 @@ import yaml
 import math
 
 STATE_COUNT_THRESHOLD = 3
-USE_MODEL = False
+USE_MODEL = True
+PRINT_PREDICTION_LOGGING = True
 
 class TLDetector(object):
     def __init__(self):
@@ -94,6 +95,13 @@ class TLDetector(object):
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
 
+    def path_distance(self, p1, p2):
+        """
+        return the distance between two position msg
+        """
+        dl = lambda a,b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2 + (a.z-b.z)**2)
+        return dl(p1,p2)
+
     def distance(self, p1, p2):
         return math.sqrt((p2.position.x-p1.position.x)**2 + (p2.position.y-p1.position.y)**2)
      
@@ -122,11 +130,9 @@ class TLDetector(object):
 
             return closest_idx
 
-    def get_light_state(self, light):
+    def get_light_state(self):
         """Determines the current color of the traffic light
 
-        Args:
-            light (TrafficLight): light to classify
 
         Returns:
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
@@ -150,48 +156,73 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        light = None
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
         if(self.pose):
             car_position_idx = self.get_closest_waypoint(self.pose.pose)
 
-        # Get closest stop line
-        closest_idx_diff = 10e10
-        closest_stop_line_pose = None
-        closest_stop_line_idx = None
-        for i in range(len(stop_line_positions)):
-            stop_line_pose = PoseStamped()
-            stop_line_pose.pose.position.x = stop_line_positions[i][0]
-            stop_line_pose.pose.position.y = stop_line_positions[i][1]
-            stop_line_idx = self.get_closest_waypoint(stop_line_pose.pose)
-            idx_diff = stop_line_idx - car_position_idx
-            if idx_diff < 0:
-                idx_diff += self.waypoints_num
-
-            if idx_diff < closest_idx_diff:
-                closest_idx_diff = idx_diff
-                closest_stop_line_pose = stop_line_pose
-                closest_stop_line_idx = stop_line_idx
-
-            if not USE_MODEL:
-                stop_line_state = self.lights[i].state
             
-            else: 
-                #Change this part if use model for prodiction
-                #TODO find the closest visible traffic light (if one exists)
-                '''
-                if light:
-                    state = self.get_light_state(light)
-                    return light_wp, state
-                self.waypoints = None
+            # Get closest stop line
+            closest_idx_diff = 10e10
+            closest_stop_line_pose = None
+            closest_stop_line_idx = None
+            for i in range(len(stop_line_positions)):
+                stop_flag = False
+                state = TrafficLight.UNKNOWN
+                stop_line_pose = PoseStamped()
+                stop_line_pose.pose.position.x = stop_line_positions[i][0]
+                stop_line_pose.pose.position.y = stop_line_positions[i][1]
+                stop_line_idx = self.get_closest_waypoint(stop_line_pose.pose)
+                idx_diff = stop_line_idx - car_position_idx
+                if idx_diff < 0:
+                    idx_diff += self.waypoints_num
+
+                if idx_diff < closest_idx_diff:
+                    closest_idx_diff = idx_diff
+                    closest_stop_line_pose = stop_line_pose
+                    closest_stop_line_idx = stop_line_idx
+
+                if not USE_MODEL:
+                    stop_line_state = self.lights[i].state
+                     
+                    if stop_line_state != TrafficLight.RED:
+                        stop_flag = False
+                        state = TrafficLight.UNKNOWN
+                    else:
+                        stop_flag = True
+                        state = stop_line_state
+                
+                else: 
+                    #Change this part if use model for prodiction
+                    #TODO find the closest visible traffic light (if one exists)
+                    pdistance =  self.path_distance(self.pose.pose.position,
+                                         closest_stop_line_pose.pose.position)
+                    
+
+                    if  pdistance <100.0:                      
+                        stop_line_state = self.get_light_state()
+			if PRINT_PREDICTION_LOGGING:                        
+				rospy.logwarn(str(stop_line_state))     
+                        if stop_line_state != TrafficLight.RED:
+                            stop_flag = False
+                            state = TrafficLight.UNKNOWN
+                        else:
+                            stop_flag = True
+                            state = stop_line_state
+                    else:
+                        stop_flag = False
+                        state = TrafficLight.UNKNOWN
+
+            if stop_flag == True:
+                return closest_stop_line_idx, state
+            else:
                 return -1, TrafficLight.UNKNOWN
-                '''
-                pass
+            
+        else:            
+            return -1, TrafficLight.UNKNOWN 
 
-        return closest_stop_line_idx,stop_line_state
-
+        return -1, TrafficLight.UNKNOWN 
 
 
 if __name__ == '__main__':
