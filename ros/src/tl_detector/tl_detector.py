@@ -14,6 +14,7 @@ import math
 
 STATE_COUNT_THRESHOLD = 3
 USE_MODEL = True
+PRINT_PREDICTION_LOGGING = True
 
 class TLDetector(object):
     def __init__(self):
@@ -201,7 +202,8 @@ class TLDetector(object):
 
                     if  pdistance <100.0:                      
                         stop_line_state = self.get_light_state()
-                        rospy.logwarn(str(stop_line_state))     
+			if PRINT_PREDICTION_LOGGING:                        
+				rospy.logwarn(str(stop_line_state))     
                         if stop_line_state != TrafficLight.RED:
                             stop_flag = False
                             state = TrafficLight.UNKNOWN
