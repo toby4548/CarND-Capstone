@@ -24,9 +24,9 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 20 # Number of waypoints we will publish. You can change this number
-RED_LIGHT_MIN_DIST = 3.0
-AMPLIFICATION_FACTOR = 4
+LOOKAHEAD_WPS = 50 # Number of waypoints we will publish. You can change this number
+RED_LIGHT_MIN_DIST = 0.0
+AMPLIFICATION_FACTOR = 1
 
 class WaypointUpdater(object):
     def __init__(self):
@@ -46,7 +46,7 @@ class WaypointUpdater(object):
         self.current_pose = None
         self.red_light_waypoint_idx = -1
 	self.callback_time = rospy.get_time()
-	self.initial_velocity = 0.0
+	self.initial_velocity = 5.0
 
         # Enter loop to process topic messages
         self.loop()
@@ -59,7 +59,7 @@ class WaypointUpdater(object):
         @return: None
         '''
 
-        rate = rospy.Rate(10) # 10Hz
+        rate = rospy.Rate(50) # 10Hz
         while not rospy.is_shutdown():
 	    rospy.loginfo("info: ")
 	    rospy.loginfo("info: ")
@@ -81,7 +81,7 @@ class WaypointUpdater(object):
         '''
         self.saved_base_waypoints = msg.waypoints
         self.num_waypoints = len(msg.waypoints)
-	self.initial_velocity = self.saved_base_waypoints[0].twist.twist.linear.x
+	#self.initial_velocity = self.saved_base_waypoints[0].twist.twist.linear.x
 
 
     def pose_cb(self, msg):
@@ -196,10 +196,13 @@ class WaypointUpdater(object):
         vel = 0.0
 
         if d > RED_LIGHT_MIN_DIST:
-            vel = (d - RED_LIGHT_MIN_DIST) * (car_vel ** (1-self.max_deceleration))
-
+            #vel = (d - RED_LIGHT_MIN_DIST) * (car_vel ** (1-self.max_deceleration))
+            vel = math.sqrt(2*d*self.max_deceleration)
         if vel < 1.0:
             vel = 0.0
+
+        if vel >self.initial_velocity:
+            vel = self.initial_velocity
 
         return vel
 
@@ -220,10 +223,17 @@ class WaypointUpdater(object):
             if (self.red_light_waypoint_idx - car_index) > 0:
                 d = self.distance(self.saved_base_waypoints, car_index, self.red_light_waypoint_idx)
                 car_wp = self.saved_base_waypoints[car_index]
-		d2 = AMPLIFICATION_FACTOR * (car_wp.twist.twist.linear.x ** self.max_deceleration)
+		d2 = AMPLIFICATION_FACTOR * (car_wp.twist.twist.linear.x **2)/(2* self.max_deceleration)
 		rospy.loginfo("info: distance: {}, decelerated {}".format(d, d2))
-                if d < d2:
+                if d>0:
                     is_red_light_ahead = True
+
+            else:
+	        for i, waypoint in enumerate(ahead_waypoints):
+                    waypoint.twist.twist.linear.x = self.initial_velocity
+                    rospy.loginfo("info: velocity - {}".format(self.initial_velocity))
+
+
             if is_red_light_ahead and is_red_light_not_passed:
 		rospy.loginfo("info: red light is ahead")
                 for i, waypoint in enumerate(ahead_waypoints):
