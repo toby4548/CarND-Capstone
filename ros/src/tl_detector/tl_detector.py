@@ -13,7 +13,7 @@ import yaml
 import math
 
 STATE_COUNT_THRESHOLD = 3
-USE_MODEL = True
+USE_MODEL = False
 PRINT_PREDICTION_LOGGING = False
 
 class TLDetector(object):
@@ -45,7 +45,10 @@ class TLDetector(object):
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
         self.bridge = CvBridge()
-        self.light_classifier = TLClassifier()
+
+        if USE_MODEL:
+            self.light_classifier = TLClassifier()
+        
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN
@@ -145,7 +148,10 @@ class TLDetector(object):
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "rgb8")
 
         #Get classification
-        return self.light_classifier.get_classification(cv_image)
+        if USE_MODEL:
+            return self.light_classifier.get_classification(cv_image)
+        else: 
+            return TrafficLight.UNKNOWN
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
